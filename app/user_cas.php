@@ -49,28 +49,49 @@ class OC_USER_CAS extends OC_User_Backend {
 	}
 
 	public function __construct() {
-		$this->autocreate = OCP\Config::getAppValue('user_cas', 'cas_autocreate', true);
-		$this->cas_link_to_ldap_backend = \OCP\Config::getAppValue('user_cas', 'cas_link_to_ldap_backend', false);
-		$this->updateUserData = OCP\Config::getAppValue('user_cas', 'cas_update_user_data', true);
-		$this->defaultGroup = OCP\Config::getAppValue('user_cas', 'cas_default_group', '');
-		$this->protectedGroups = explode (',', str_replace(' ', '', OCP\Config::getAppValue('user_cas', 'cas_protected_groups', '')));
-		$this->mailMapping = OCP\Config::getAppValue('user_cas', 'cas_email_mapping', '');
-		$this->displayNameMapping = OCP\Config::getAppValue('user_cas', 'cas_displayName_mapping', '');
-		$this->groupMapping = OCP\Config::getAppValue('user_cas', 'cas_group_mapping', '');
+		// copy system settings to app settings when app is initialized for the first time.  
+		if( ! self::getAppValue('system_defaults_loaded', false)) {
+			self::setAppValue('cas_autocreate', self::getSystemValue('cas_autocreate', true));
+			self::setAppValue('cas_force_login', self::getSystemValue('cas_force_login', false));
+			self::setAppValue('cas_link_to_ldap_backend', self::getSystemValue('cas_link_to_ldap_backend', false));
+			self::setAppValue('cas_update_user_data', self::getSystemValue('cas_update_user_data', true));
+			self::setAppValue('cas_default_group', self::getSystemValue('cas_default_group', ''));
+			self::setAppValue('cas_protected_groups', self::getSystemValue('cas_protected_groups', ''));
+			self::setAppValue('cas_email_mapping', self::getSystemValue('cas_email_mapping', ''));
+			self::setAppValue('cas_displayName_mapping', self::getSystemValue('cas_displayName_mapping', ''));
+			self::setAppValue('cas_group_mapping', self::getSystemValue('cas_group_mapping', ''));
+			self::setAppValue('cas_server_version', self::getSystemValue('cas_server_version', '2.0'));
+			self::setAppValue('cas_server_hostname', self::getSystemValue('cas_server_hostname', $_SERVER['SERVER_NAME']));
+			self::setAppValue('cas_server_port', self::getSystemValue('cas_server_port', 443));
+			self::setAppValue('cas_server_path', self::getSystemValue('cas_server_path', '/cas'));
+			self::setAppValue('cas_debug_file', self::getSystemValue('cas_debug_file', ''));
+			self::setAppValue('cas_cert_path', self::getSystemValue('cas_cert_path', ''));
+			self::setAppValue('cas_php_cas_path', self::getSystemValue('cas_php_cas_path', 'CAS.php'));
+			self::setAppValue('cas_service_url', self::getSystemValue('cas_service_url', ''));
+			self::setAppValue('system_defaults_loaded', true);
+		}
+		$this->autocreate = self::getAppValue('cas_autocreate', true);
+		$this->cas_link_to_ldap_backend = self::getAppValue('cas_link_to_ldap_backend', false);
+		$this->updateUserData = self::getAppValue('cas_update_user_data', true);
+		$this->defaultGroup = self::getAppValue('cas_default_group', '');
+		$this->protectedGroups = explode (',', str_replace(' ', '', self::getAppValue('cas_protected_groups', '')));
+		$this->mailMapping = self::getAppValue('cas_email_mapping', '');
+		$this->displayNameMapping = self::getAppValue('cas_displayName_mapping', '');
+		$this->groupMapping = self::getAppValue('cas_group_mapping', '');
 
 		self :: initialized_php_cas();
 	}
 
 	public static function initialized_php_cas() {
 		if(!self :: $_initialized_php_cas) {
-			$casVersion = OCP\Config::getAppValue('user_cas', 'cas_server_version', '2.0');
-			$casHostname = OCP\Config::getAppValue('user_cas', 'cas_server_hostname', $_SERVER['SERVER_NAME']);
-			$casPort = OCP\Config::getAppValue('user_cas', 'cas_server_port', 443);
-			$casPath = OCP\Config::getAppValue('user_cas', 'cas_server_path', '/cas');
-			$casDebugFile=OCP\Config::getAppValue('user_cas', 'cas_debug_file', '');
-			$casCertPath = OCP\Config::getAppValue('user_cas', 'cas_cert_path', '');
-			$php_cas_path=OCP\Config::getAppValue('user_cas', 'cas_php_cas_path', 'CAS.php');
-			$cas_service_url = OCP\Config::getAppValue('user_cas', 'cas_service_url', '');
+			$casVersion = self::getAppValue('cas_server_version', '2.0');
+			$casHostname = self::getAppValue('cas_server_hostname', $_SERVER['SERVER_NAME']);
+			$casPort = self::getAppValue('cas_server_port', 443);
+			$casPath = self::getAppValue('cas_server_path', '/cas');
+			$casDebugFile=self::getAppValue('cas_debug_file', '');
+			$casCertPath = self::getAppValue('cas_cert_path', '');
+			$php_cas_path=self::getAppValue('cas_php_cas_path', 'CAS.php');
+			$cas_service_url = self::getAppValue('cas_service_url', '');
 
 			if (!class_exists('phpCAS')) {
 				if (empty($php_cas_path)) $php_cas_path='CAS.php';
@@ -154,6 +175,18 @@ class OC_USER_CAS extends OC_User_Backend {
 	public function setDisplayName($uid,$displayName) {
 		$udb = new OC_User_Database;
 		$udb->setDisplayName($uid,$displayName);
+	}
+
+	protected static function getAppValue($id, $default) {
+		return \OCP\Config::getAppValue('user_cas', $id, $default);
+	}
+
+	protected static function setAppValue($id, $value) {
+		return \OCP\Config::setAppValue('user_cas', $id, $value);
+	}
+
+	protected static function getSystemValue($id, $default) {
+		return \OCP\Config::getSystemValue($id, $default);
 	}
 
 }
